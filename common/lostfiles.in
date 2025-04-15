@@ -100,7 +100,7 @@ make_relaxed_exclude_list() {
   done
 }
 
-# Do not exclude anything in strict mode, just add the default Arch paths
+# Do not exclude anything in strict mode, just add the default Void paths
 make_strict_exclude_list() {
    find_filter=(/boot /efi /etc /opt /srv /usr /var)
 }
@@ -108,7 +108,7 @@ make_strict_exclude_list() {
 $make_find_filter
 
 LC_ALL=C comm -13 \
-  <(LC_ALL=C pacman -Qlq | sed -e 's|/$||' | LC_ALL=C sort -u) \
+  <(LC_ALL=C xbps-query -o | cut -d ' ' -f2 | sed -e 's|/$||' | LC_ALL=C sort -u) \
   <(LC_ALL=C find "${find_filter[@]}" 2>/dev/null | LC_ALL=C sort -u) | $postprocess
 
 # vim:set ts=2 sw=2 et:
