@@ -44,18 +44,34 @@ while getopts 'hsz' OPTION; do
 done
 shift $((OPTIND -1))
 
+generate_pkg_files() {
+    # echo "Gerando lista de arquivos de pacotes instalados..."
+    for pkg in $(xbps-query -l | awk '{print $2}'); do
+        xbps-query -f "$pkg"
+    done | sed -e 's|^/||' | sort -u > /tmp/pkg_files.txt
+}
+
 # generate_pkg_files() {
-#     echo "Gerando lista de arquivos de pacotes instalados..."
-#     for pkg in $(xbps-query -l | awk '{print $2}'); do
-#         xbps-query -f "$pkg"
-#     done | sed -e 's|^/||' | sort -u > /tmp/pkg_files.txt
+#   for pkg in $(xbps-query -l | awk '{print $2}'); do
+#     xbps-query -f "$pkg"
+#   done | sed -e 's|^/||' | sort -u 
 # }
 
-generate_pkg_files() {
-  for pkg in $(xbps-query -l | awk '{print $2}'); do
-    xbps-query -f "$pkg"
-  done | sed -e 's|^/||' | sort -u 
+find_lost_files() {
+    generate_pkg_files
+    
+    echo "Procurando arquivos perdidos..."
+    find /boot /etc /opt /srv /usr /var -type f 2>/dev/null | 
+    grep -v -f /tmp/excluded_paths.txt |
+    sed -e 's|^/||' | 
+    sort -u > /tmp/all_files.txt
+    
+    comm -13 /tmp/pkg_files.txt /tmp/all_files.txt
+    
+    # Limpar arquivos temporários
+    rm -f /tmp/pkg_files.txt /tmp/all_files.txt
 }
+
 
 # Sorts a list of file names by size
 sort_by_size() {
@@ -133,12 +149,14 @@ $make_find_filter
 #   <(LC_ALL=C xbps-query -l | awk '{print $2}' | xargs -I{} xbps-query -f {} | sort -u) \
 #   <(LC_ALL=C find "${find_filter[@]}" 2>/dev/null | LC_ALL=C sort -u) | $postprocess
 
-LC_ALL=C comm -13 \
-  <(LC_ALL=C generate_pkg_files) \
-  <(LC_ALL=C find "${find_filter[@]}" 2>/dev/null | LC_ALL=C sort -u) | $postprocess
+# LC_ALL=C comm -13 \
+#   <(LC_ALL=C generate_pkg_files) \
+#   <(LC_ALL=C find "${find_filter[@]}" 2>/dev/null | LC_ALL=C sort -u) | $postprocess
 
 # LC_ALL=C comm -13 \
 #   <(LC_ALL=C xbps-query -f "*" | sort -u) \
 #   <(LC_ALL=C find "${find_filter[@]}" 2>/dev/null | LC_ALL=C sort -u) | $postprocess
+
+find_lost_files
 
 # vim:set ts=2 sw=2 et:
