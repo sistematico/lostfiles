@@ -112,8 +112,16 @@ $make_find_filter
 #   <(LC_ALL=C xbps-query -o | cut -d ' ' -f2 | sed -e 's|/$||' | LC_ALL=C sort -u) \
 #   <(LC_ALL=C find "${find_filter[@]}" 2>/dev/null | LC_ALL=C sort -u) | $postprocess
 
+# LC_ALL=C comm -13 \
+#   <(LC_ALL=C find /var/db/xbps/ -type f -name "*.plist" -exec xbps-uhelper getfiles {} \; | sed 's|^|\.|' | LC_ALL=C sort -u) \
+#   <(LC_ALL=C find "${find_filter[@]}" 2>/dev/null | LC_ALL=C sort -u) | $postprocess
+
 LC_ALL=C comm -13 \
-  <(LC_ALL=C find /var/db/xbps/.*/ -type f -name "files.plist" -exec xbps-uhelper getfiles {} \; | sed 's|^|\.|' | LC_ALL=C sort -u) \
+  <(LC_ALL=C xbps-query -l | awk '{print $2}' | xargs -I{} xbps-query -f {} | sort -u) \
   <(LC_ALL=C find "${find_filter[@]}" 2>/dev/null | LC_ALL=C sort -u) | $postprocess
+
+# LC_ALL=C comm -13 \
+#   <(LC_ALL=C xbps-query -f "*" | sort -u) \
+#   <(LC_ALL=C find "${find_filter[@]}" 2>/dev/null | LC_ALL=C sort -u) | $postprocess
 
 # vim:set ts=2 sw=2 et:
